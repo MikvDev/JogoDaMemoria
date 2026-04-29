@@ -1,13 +1,15 @@
-const input = document.querySelector('input');
-const buttom = document.querySelector('buttom');
+const input = document.querySelector('.loginInput');
+const button = document.querySelector('.loginButton');
 
-
-const ValidateInput = ({ target }) => {
-    if(target.value.length > 2){
-        buttom.removeAttribute('disable');
-        return;
+const validateInput = ({ target }) => {
+    // Verificamos se o comprimento do texto é maior que 2
+    if (target.value.trim().length > 2) {
+        // Remove o atributo para habilitar o botão
+        button.removeAttribute('disabled');
+    } else {
+        // Adiciona o atributo para desabilitar o botão
+        button.setAttribute('disabled', '');
     }
-    buttom.setAttribute('disable','');
 }
 
-input.addEventListener('input',ValidateInput);
+input.addEventListener('input', validateInput);
