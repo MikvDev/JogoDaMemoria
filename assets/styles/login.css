@@ -66,14 +66,14 @@
     80% { transform: translate(2px, -2px); }
 }
 
-.login__input {
+    input {
     border: 2px solid #00ffff;
     border-radius: 8px;
     color: #fff;
     font-size: 1em;
     margin-bottom: 15px;
     max-width: 300px;
-    outline: none;
+    margin-bottom: 100;
     padding: 15px;
     width: 100%;
     background: rgba(0, 0, 0, 0.8);
@@ -85,17 +85,6 @@
     position: relative;
 }
 
-.login__input:focus {
-    border-color: #ff00ff;
-    box-shadow: 
-        0 0 30px rgba(255, 0, 255, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}
-
-.login__input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
 
 .login__button {
     background: linear-gradient(45deg, #ff00ff, #00ffff);
