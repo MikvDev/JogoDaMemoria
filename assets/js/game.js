@@ -1,7 +1,7 @@
 const grid = document.querySelector('.grid');
 const spanPlayer = document.querySelector('.player');
 const timer = document.querySelector('.timer');
-
+const musica = new Audio('assets/audio/yesyes.mp3');
 const characters = [
   'dio',
   'iggy',
@@ -44,7 +44,7 @@ const checkCards = () => {
 
     firstCard = '';
     secondCard = '';
-
+    musica.play();
     checkEndGame();
 
   } else {
