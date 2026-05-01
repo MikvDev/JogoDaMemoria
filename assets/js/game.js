@@ -1,206 +1,167 @@
-const musica = new Audio("../audio/y.mp3");
-musica.volume = 0.2
-const error = new Audio("../audio/dio-wryyy.mp3");
-const backgroundSound = new Audio("../audio/jojos.mp3");
-const grid = document.querySelector('.grid');
-const spanPlayer = document.querySelector('.player');
-const timer = document.querySelector('.timer');
+// --- 1. Selecionando as coisas na tela ---
+const grid = document.querySelector(".grid");
+const tempoNaTela = document.querySelector(".timer");
+const tentativasNaTela = document.querySelector(".attempts");
+const pontosNaTela = document.querySelector(".score");
+const botaoReiniciar = document.getElementById("btn-reiniciar");
 
-const scoreDisplay = document.querySelector('.score');
-const attemptsDisplay = document.querySelector('.attempts');
-const pairsDisplay = document.querySelector('.pairs');
+// --- 2. Sons do Jogo ---
+const musicaFundo = new Audio("../audio/jojoOpen.mp3");
+const somAcerto = new Audio("../audio/y.mp3");
+const somErro = new Audio("../audio/dio-wryyy.mp3");
+musicaFundo.volume = 0.1;
 
-const characters = [
-  'dio',
-  'iggy',
-  'jotaro',
-  'macaco',
-  'MorteTreze',
-  'polnareff',
-  'joseph',
-  'senhora',
-  'veio',
-  'holHorse',
+// --- 3. Lista de Personagens ---
+const personagens = [
+  "dio", "iggy", "macaco", "joseph", "jotaro",
+  "veio", "senhora", "holHorse", "polnareff", "morteTreze"
 ];
 
-const POINTS_PER_PAIR = 100;
-const PENALTY_WRONG = 10;
-const TOTAL_PAIRS = characters.length;
+// --- 4. Variáveis que controlam o jogo (O Estado) ---
+let primeiraCarta = null;
+let segundaCarta = null;
+let bloqueiaClique = false; // Isso impede de clicar em 3 cartas ao mesmo tempo
+let tentativas = 0;
+let pontos = 0;
+let tempo = 0;
+let cronometro;
 
-let score = 0;
-let attempts = 0;
-let pairsFound = 0;
-let secondsElapsed = 0;
+// --- 5. Lógica de Virar a Carta ---
+function virarCarta(evento) {
+  // Se o tabuleiro estiver bloqueado, não faz nada
+  if (bloqueiaClique) return;
 
-const createElement = (tag, className) => {
-  const element = document.createElement(tag);
-  element.className = className;
-  return element;
-}
+  const cartaClicada = evento.target.parentNode;
 
-let firstCard = '';
-let secondCard = '';
+  // Se a carta já está virada, não faz nada
+  if (cartaClicada.classList.contains("reveal-card")) return;
 
-const updateScoreDisplay = () => {
-  if (scoreDisplay) scoreDisplay.innerHTML = score;
-  if (attemptsDisplay) attemptsDisplay.innerHTML = attempts;
-  if (pairsDisplay) pairsDisplay.innerHTML = `${pairsFound}/${TOTAL_PAIRS}`;
-}
+  // Vira a carta na tela
+  cartaClicada.classList.add("reveal-card");
 
-const showScoreAnimation = (points, isPositive) => {
-  const popup = document.createElement('div');
-  popup.className = `score-popup ${isPositive ? 'score-popup--positive' : 'score-popup--negative'}`;
-  popup.textContent = isPositive ? `+${points}` : `-${points}`;
-  document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 1000);
-}
-
-const calculateBonus = (seconds) => {
-  if (seconds <= 30) return 500;
-  if (seconds <= 60) return 300;
-  if (seconds <= 90) return 150;
-  if (seconds <= 120) return 50;
-  return 0;
-}
-
-const checkEndGame = () => {
-  const disabledCards = document.querySelectorAll('.disabled-card');
-
-  if (disabledCards.length === TOTAL_PAIRS * 2) {
-    clearInterval(this.loop);
-
-    const bonus = calculateBonus(secondsElapsed);
-    score += bonus;
-    updateScoreDisplay();
-
-    const finalTime = timer.innerHTML;
-
-    setTimeout(() => {
-      showEndGameModal(finalTime, bonus);
-    }, 500);
+  // Se for a primeira carta do par...
+  if (primeiraCarta === null) {
+    primeiraCarta = cartaClicada;
+    return; // Para a função aqui e espera o próximo clique
   }
+
+  // Se chegou aqui, é porque é a segunda carta
+  segundaCarta = cartaClicada;
+  tentativas++;
+  tentativasNaTela.innerHTML = tentativas;
+
+  verificarPar();
 }
 
-const showEndGameModal = (finalTime, bonus) => {
-  const modal = document.createElement('div');
-  modal.className = 'end-modal';
-  modal.innerHTML = `
-    <div class="end-modal__content">
-      <h2 class="end-modal__title">🎉 Parabéns!</h2>
-      <p class="end-modal__player">${spanPlayer.innerHTML}</p>
-      <div class="end-modal__stats">
-        <div class="end-modal__stat">
-          <span class="end-modal__stat-label">⏱ Tempo</span>
-          <span class="end-modal__stat-value">${finalTime}s</span>
-        </div>
-        <div class="end-modal__stat">
-          <span class="end-modal__stat-label">🎯 Tentativas</span>
-          <span class="end-modal__stat-value">${attempts}</span>
-        </div>
-        <div class="end-modal__stat">
-          <span class="end-modal__stat-label">⚡ Bônus velocidade</span>
-          <span class="end-modal__stat-value end-modal__stat-value--bonus">+${bonus}</span>
-        </div>
-        <div class="end-modal__stat end-modal__stat--total">
-          <span class="end-modal__stat-label">🏆 Pontuação Final</span>
-          <span class="end-modal__stat-value end-modal__stat-value--score">${score}</span>
-        </div>
-      </div>
-      <button class="end-modal__btn" onclick="location.reload()">Jogar Novamente</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-}
+// --- 6. Lógica de Verificar se Formou Par ---
+function verificarPar() {
+  const nome1 = primeiraCarta.getAttribute("data-character");
+  const nome2 = segundaCarta.getAttribute("data-character");
 
-const checkCards = () => {
-  const firstCharacter = firstCard.getAttribute('data-character');
-  const secondCharacter = secondCard.getAttribute('data-character');
-  attempts++;
+  if (nome1 === nome2) {
+    // ACERTOU O PAR!
+    pontos += 1; // O trabalho pede +1 por acerto (você tinha colocado +10, ajustei para a regra)
+    pontosNaTela.innerHTML = pontos;
+    somAcerto.play();
 
-  if (firstCharacter === secondCharacter) {
-    score += POINTS_PER_PAIR;
-    pairsFound++;
-    showScoreAnimation(POINTS_PER_PAIR, true);
+    // Marca as cartas como desativadas (para não clicar mais)
+    primeiraCarta.firstChild.classList.add("disabled-card");
+    segundaCarta.firstChild.classList.add("disabled-card");
 
-    firstCard.firstChild.classList.add('disabled-card');
-    secondCard.firstChild.classList.add('disabled-card');
+    // Limpa as variáveis para a próxima jogada
+    primeiraCarta = null;
+    segundaCarta = null;
 
-    firstCard = '';
-    secondCard = '';
-    musica.play();
-
-    updateScoreDisplay();
-    checkEndGame();
-
+    verificarVitoria();
   } else {
-    score = Math.max(0, score - PENALTY_WRONG);
-    showScoreAnimation(PENALTY_WRONG, false);
+    // ERROU O PAR!
+    somErro.play();
+    bloqueiaClique = true; // Trava o jogo para o jogador não sair clicando
 
+    // Espera meio segundo (500ms) para desvirar as cartas
     setTimeout(() => {
-      firstCard.classList.remove('reveal-card');
-      secondCard.classList.remove('reveal-card');
+      primeiraCarta.classList.remove("reveal-card");
+      segundaCarta.classList.remove("reveal-card");
 
-      firstCard = '';
-      secondCard = '';
+      // Limpa as variáveis e destrava o jogo
+      primeiraCarta = null;
+      segundaCarta = null;
+      bloqueiaClique = false;
     }, 500);
-
-    updateScoreDisplay();
   }
 }
 
-const revealCard = ({ target }) => {
-  if (target.parentNode.className.includes('reveal-card')) {
-    return;
-  }
+// --- 7. Criar e Carregar as Cartas ---
+function criarCarta(personagem) {
+  const carta = document.createElement("div");
+  const frente = document.createElement("div");
+  const costas = document.createElement("div");
 
-  if (firstCard === '') {
-    target.parentNode.classList.add('reveal-card');
-    firstCard = target.parentNode;
-  } else if (secondCard === '') {
-    target.parentNode.classList.add('reveal-card');
-    secondCard = target.parentNode;
-    checkCards();
-  }
+  carta.className = "card";
+  frente.className = "face front";
+  costas.className = "face back";
+
+  frente.style.backgroundImage = `url('../images/${personagem}.jpg')`;
+
+  carta.appendChild(frente);
+  carta.appendChild(costas);
+
+  carta.addEventListener("click", virarCarta);
+  carta.setAttribute("data-character", personagem);
+
+  return carta;
 }
 
-const createCard = (character) => {
-  const card = createElement('div', 'card');
-  const front = createElement('div', 'face front');
-  const back = createElement('div', 'face back');
+function iniciarJogo() {
+  // Zera o placar e a tela
+  grid.innerHTML = "";
+  tentativas = 0;
+  pontos = 0;
+  tempo = 0;
+  tentativasNaTela.innerHTML = "0";
+  pontosNaTela.innerHTML = "0";
+  tempoNaTela.innerHTML = "0";
+  primeiraCarta = null;
+  segundaCarta = null;
+  bloqueiaClique = false;
 
-  front.style.backgroundImage = `url('../images/${character}.jpg')`;
+  musicaFundo.play();
 
-  card.appendChild(front);
-  card.appendChild(back);
+  // Duplica os personagens e embaralha (fórmula mágica do JS para embaralhar)
+  const cartasDuplicadas = [...personagens, ...personagens];
+  const cartasEmbaralhadas = cartasDuplicadas.sort(() => Math.random() - 0.5);
 
-  card.addEventListener('click', revealCard);
-  card.setAttribute('data-character', character);
-
-  return card;
-}
-
-const loadGame = () => {
-  const duplicateCharacters = [...characters, ...characters];
-  const shuffledArray = duplicateCharacters.sort(() => Math.random() - 0.5);
-
-  shuffledArray.forEach((character) => {
-    const card = createCard(character);
-    grid.appendChild(card);
+  // Cria e joga cada carta na tela
+  cartasEmbaralhadas.forEach((personagem) => {
+    const cartaNova = criarCarta(personagem);
+    grid.appendChild(cartaNova);
   });
-}
 
-const startTimer = () => {
- 
-  this.loop = setInterval(() => {
-    secondsElapsed++;
-     backgroundSound.play;
-    timer.innerHTML = secondsElapsed;
+  // Reseta o cronômetro
+  clearInterval(cronometro);
+  cronometro = setInterval(() => {
+    tempo++;
+    tempoNaTela.innerHTML = tempo;
   }, 1000);
 }
 
-window.onload = () => {
-  spanPlayer.innerHTML = localStorage.getItem('player');
-  updateScoreDisplay();
-  startTimer();
-  loadGame();
+// --- 8. Verificar Fim de Jogo ---
+function verificarVitoria() {
+  const cartasDesativadas = document.querySelectorAll(".disabled-card");
+  
+  if (cartasDesativadas.length === personagens.length * 2) {
+    clearInterval(cronometro);
+    setTimeout(() => {
+      alert(`Parabéns! Você venceu em ${tempo} segundos com ${tentativas} tentativas e fez ${pontos} pontos!`);
+    }, 500); // Espera meio segundo para a última carta virar antes do alert
+  }
 }
+
+// --- 9. Eventos Iniciais ---
+botaoReiniciar.addEventListener("click", iniciarJogo);
+
+window.onload = () => {
+  const nomeJogador = localStorage.getItem("player") || "Jogador";
+  document.querySelector(".player").innerHTML = nomeJogador;
+  iniciarJogo();
+};
