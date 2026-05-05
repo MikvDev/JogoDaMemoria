@@ -35,13 +35,13 @@ function virarCarta(evento) {
 
   // Se a carta já está virada, não faz nada
   if (cartaClicada.classList.contains("reveal-card")) return;
-
+ // sem isso daria para clicar na mesma carta e ganhar pontos 
   // Vira a carta na tela
   cartaClicada.classList.add("reveal-card");
 
   // Se for a primeira carta do par...
-  if (primeiraCarta === null) {
-    primeiraCarta = cartaClicada;
+  if (primeiraCarta === null) { // sem isso as cartas não seriam comparadas, a lógica quebraria e as cartas ficariam
+     primeiraCarta = cartaClicada;
     return; // Para a função aqui e espera o próximo clique
   }
 
@@ -60,7 +60,7 @@ function verificarPar() {
 
   if (nome1 === nome2) {
     // ACERTOU O PAR!
-    pontos += 1; // O trabalho pede +1 por acerto (você tinha colocado +10, ajustei para a regra)
+    pontos += 1; 
     pontosNaTela.innerHTML = pontos;
     somAcerto.play();
 
@@ -91,7 +91,7 @@ function verificarPar() {
   }
 }
 
-// --- 7. Criar e Carregar as Cartas ---
+// --- 7. Criar e Carregar as Cartas --- 
 function criarCarta(personagem) {
   const carta = document.createElement("div");
   const frente = document.createElement("div");
